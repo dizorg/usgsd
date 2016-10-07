@@ -6,25 +6,16 @@
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
 # library(downloader)
-# batfile <- "C:/My Directory/HMDA/MonetDB/hmda.bat"
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/Home%20Mortgage%20Disclosure%20Act/replicate%20ffiec%20publications.R" , prompt = FALSE , echo = TRUE )
+# setwd( "C:/My Directory/HMDA/" )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Home%20Mortgage%20Disclosure%20Act/replicate%20ffiec%20publications.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 # this r script will replicate statistics found in various
@@ -36,46 +27,24 @@
 #####################################################################################################################################################
 # prior to running this analysis script, the hmda public use files must be imported into a monet database on the local machine. you must run this:  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://raw.github.com/ajdamico/usgsd/master/Home%20Mortgage%20Disclosure%20Act/download%20all%20microdata.R                                      #
+# https://raw.githubusercontent.com/ajdamico/asdfree/master/Home%20Mortgage%20Disclosure%20Act/download%20all%20microdata.R                         #
 #####################################################################################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-# # # # # # # # # # # # # # #
-# warning: monetdb required #
-# # # # # # # # # # # # # # #
-
-
-library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
-
-
-# after running the r script above, users should have handy a few lines
-# to initiate and connect to the monet database containing the
-# hmda public use files.  run them now.  mine look like this:
-
-
-
-################################################################################
-# lines of code to hold on to for the start of all other hmda monetdb analyses #
-
-# first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/HMDA/MonetDB/hmda.bat"
+# setwd( "C:/My Directory/HMDA/" )
 
-# second: run the MonetDB server
-pid <- monetdb.server.start( batfile )
 
-# third: your five lines to make a monet database connection.
-# just like above, mine look like this:
-dbname <- "hmda"
-dbport <- 50005
+library(MonetDBLite)
+library(DBI)			# load the DBI package (implements the R-database coding)
 
-monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
-# end of lines of code to hold on to for all other hmda monetdb analyses #
-##########################################################################
+# name the database files in the "MonetDB" folder of the current working directory
+dbfolder <- paste0( getwd() , "/MonetDB" )
 
+# open the connection to the monetdblite database
+db <- dbConnect( MonetDBLite::MonetDBLite() , dbfolder )
 
 
 # list all tables available in the current monet database
@@ -239,35 +208,13 @@ dbGetQuery( db , 'select ethnicity , count(*) from hmda_11 where actiontype = 1 
 
 
 # if you really really care why it's off by a few records, here's the sas script from the ffiec.  have fun!
-# https://raw.github.com/ajdamico/usgsd/master/Home%20Mortgage%20Disclosure%20Act/bulletin_macros_postbob.sas
+# https://raw.githubusercontent.com/ajdamico/asdfree/master/Home%20Mortgage%20Disclosure%20Act/bulletin_macros_postbob.sas
 
 
 # race/ethnicity replication counts #
 # # # # # # # # # # # # # # # # # # #
 
 
-##############################################################################
-# lines of code to hold on to for the end of all other hmda monetdb analyses #
-
 # disconnect from the current monet database
-dbDisconnect( db )
+dbDisconnect( db , shutdown = TRUE )
 
-# and close it using the `pid`
-monetdb.server.stop( pid )
-
-# end of lines of code to hold on to for all other hmda monetdb analyses #
-##########################################################################
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

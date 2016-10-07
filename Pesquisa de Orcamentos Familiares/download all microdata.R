@@ -5,28 +5,24 @@
 # # # # # # # # # # # # # # # # #
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
+# options( encoding = "latin1" )		# # only macintosh and *nix users need this line
 # library(downloader)
 # setwd( "C:/My Directory/POF/" )
 # years.to.download <- c( 2009 , 2003 )
-# path.to.7z <- normalizePath( "C:/Program Files/7-zip/7z.exe" )
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/Pesquisa%20de%20Orcamentos%20Familiares/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# path.to.7z <- normalizePath( "C:/Program Files (x86)/7-zip/7z.exe" )		# # this is probably the correct line for windows
+# path.to.7z <- "7za"													# # this is probably the correct line for macintosh and *nix
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Pesquisa%20de%20Orcamentos%20Familiares/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
+
+# djalma pessoa
+# pessoad@gmail.com
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 #######################################################################
@@ -36,10 +32,11 @@
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #####################################################################################################################################################
-# prior to running this script, you must have the program 7-zip installed on your computer. it's a free. go to http://www.7-zip.org/download.html   #
-# this code has only been tested in a microsoft windows environment, tell us what modifications are needed for other operating systems! cool thanx  #
+# prior to running this script, windows users must have 7-zip installed on your computer. it's a free. go to http://www.7-zip.org/download.html     #
+# macintosh and *nix users need 7za installed:  http://superuser.com/questions/548349/how-can-i-install-7zip-so-i-can-run-it-from-terminal-on-os-x  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# path.to.7z <- normalizePath( "C:/Program Files/7-zip/7z.exe" )
+# path.to.7z <- normalizePath( "C:/Program Files (x86)/7-zip/7z.exe" )		# # this is probably the correct line for windows
+# path.to.7z <- "7za"														# # this is probably the correct line for macintosh and *nix
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # the line above sets the location of the 7-zip program on your local computer. uncomment it by removing the `#` and change the directory if ya did #
 #####################################################################################################################################################
@@ -56,6 +53,17 @@
 # ..in order to set your current working directory
 
 
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# ibge's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="latin1" )
+# ..to turn on latin-style encoding.
+# # # end of non-windows system edits.
+
+
 # # # # # # # # # # # # # #
 # warning: perl required! #
 # # # # # # # # # # # # # #
@@ -65,7 +73,7 @@
 
 
 # remove the # in order to run this install.packages line only once
-# install.packages( c( 'gdata' , "SAScii" , "downloader" ) )
+# install.packages( c( 'gdata' , "SAScii" , "downloader" , "digest" ) )
 
 
 # remove the `#` in order to specify which years to download
@@ -82,17 +90,18 @@
 # program start #
 # # # # # # # # #
 
-
+# check if 7z is working
+if( system( paste0('"', path.to.7z , '" -h' ) ) != 0 ) stop("you need to install 7-zip")
 
 library(SAScii) 			# load the SAScii package (imports ascii data with a SAS script)
 library(gdata) 				# load the gdata package (imports excel [.xls] files into R)
 library(downloader)			# downloads and then runs the source() function on scripts from github
 
 
-# load the download.cache and related functions
+# load the download_cached and related functions
 # to prevent re-downloading of files once they've been downloaded.
 source_url( 
-	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	"https://raw.githubusercontent.com/ajdamico/asdfree/master/Download%20Cache/download%20cache.R" , 
 	prompt = FALSE , 
 	echo = FALSE 
 )
@@ -138,13 +147,13 @@ for ( year in years.to.download ){
 	}
 	
 	# download the household and person ascii data files to the local computer..
-	download.cache( data.file , tf , mode = "wb" )
+	download_cached( data.file , tf , mode = "wb" )
 
 	# ..then unzip them into the temporary directory
 	files <- unzip( tf , exdir = td )
 
 	# download the sas importation instructions inside the same FTP directory..
-	download.cache( sas.input.instructions , tf , mode = "wb" )
+	download_cached( sas.input.instructions , tf , mode = "wb" )
 
 	# ..then also unzip them into the temporary directory
 	files <- c( files , unzip( tf , exdir = td ) )
@@ -155,15 +164,15 @@ for ( year in years.to.download ){
 		alimentacao.file <- paste0( ftp.path , "tradutores.zip" )
 		
 		# download the alimentacao file inside the same FTP directory..
-		download.cache( alimentacao.file , tf , mode = 'wb' )
+		download_cached( alimentacao.file , tf , mode = 'wb' )
 		
 		# ..then also unzip them into the temporary directory
 		files <- c( files , unzip( tf , exdir = td ) )
 	}
 		
-	# convert the character vector containing the filepaths where all data and import instructions are stored to lowercase
-	files <- tolower( files )
-
+	# some lines need to be manually encoded	
+	Encoding( files ) <- 'latin1'
+		
 	# starting in 2009, the post-stratification and food codes (codigos de alimentacao) were available in excel files
 	# so save both to the local disk
 	if ( year >= 2009 ){
@@ -172,7 +181,7 @@ for ( year in years.to.download ){
 		# tables with food codes  #
 		
 		# figure out which is the alimentacao file
-		cda <- files[ grep( 'codigos_de_alimentacao' , files ) ]
+		cda <- files[ grep( 'codigos_de_alimentacao' , tolower( files ) ) ]
 	
 		# extract both tabs from the excel file
 		componentes <- read.xls( cda , sheet = 1 , skip = 1 , colClasses = 'character' )
@@ -205,7 +214,7 @@ for ( year in years.to.download ){
 		# table for post-stratification #
 		
 		# figure out which is the post-stratification table
-		pos <- files[ grep( 'pos_estratos_totais' , files ) ]
+		pos <- files[ grep( 'pos_estratos_totais' , tolower( files ) ) ]
 	
 		# extract the post-stratification table
 		# from the excel file
@@ -238,7 +247,7 @@ for ( year in years.to.download ){
 	# get the sas import scripts under control.
 	
 	# extract the leitura file containing the sas importation instructions
-	leitura <- files[ grep( 'leitura' , files) ]
+	leitura <- files[ grep( 'leitura' , tolower( files ) ) ]
 
 	# read the whole thing into memory
 	z <- readLines( leitura )
@@ -290,14 +299,11 @@ for ( year in years.to.download ){
 		
 	# isolate the names of all data files to be imported..
 	data.files.to.import <-
-		# set everything to lowercase..
-		tolower(
-			# pull the 14th character until `.txt` in the `INFILE` lines of the sas import script
-			substr( 
-				z[ all.beginlines ] , 
-				start.pos , 
-				end.pos
-			)
+		# pull the 14th character until `.txt` in the `INFILE` lines of the sas import script
+		substr( 
+			z[ all.beginlines ] , 
+			start.pos , 
+			end.pos
 		)
 	
 	# now you've got an object containing the names of all data files that need to be imported.
@@ -322,10 +328,10 @@ for ( year in years.to.download ){
 	for ( dfn in data.files.to.import ){
 
 		# identify which .7z file contains the data	
-		if ( dfn == 't_rendimentos' ) {
-			data.file <- files[ which( 't_rendimentos1' == all.file.basenames ) ] 
+		if ( tolower( dfn ) == 't_rendimentos' ) {
+			data.file <- files[ which( 't_rendimentos1' == tolower( all.file.basenames ) ) ] 
 		} else {
-			data.file <- files[ which( dfn == all.file.basenames ) ]
+			data.file <- files[ which( tolower( dfn ) == tolower( all.file.basenames ) ) ]
 		}
 	
 	
@@ -333,15 +339,15 @@ for ( year in years.to.download ){
 		if ( length( data.file ) > 1 ){
 		
 			# pick the zipped file..
-			data.file <- data.file[ grep( '.zip' , data.file , fixed = TRUE ) ]
+			data.file <- data.file[ grep( '.zip' , tolower( data.file ) , fixed = TRUE ) ]
 			
 			# ..unzip it, and overwrite `data.file` with the new filepath
-			data.file <- tolower( unzip( data.file , exdir = td ) )
+			data.file <- unzip( data.file , exdir = td )
 		}
 		
 	
 		# and now, if the data.file is just a text file..
-		if ( substr( data.file , nchar( data.file ) - 2 , nchar( data.file ) ) == 'txt' ){
+		if ( grepl( "txt$" , tolower( data.file ) ) ){
 
 			# then no unzipping is necessary
 			curfile <- data.file
@@ -352,16 +358,16 @@ for ( year in years.to.download ){
 			# build the string to send to DOS
 			dos.command <- paste0( '"' , path.to.7z , '" x ' , data.file )
 
-			# extract the file
-			shell( dos.command )
+			# extract the file, platform-specific
+			if ( .Platform$OS.type != 'windows' ) system( dos.command ) else shell( dos.command )
 
 			# find the name of the final ASCII data file to be imported
 			curfile <- gsub( ".7z" , ".txt" , basename( data.file ) )
 
 		}
-			
+		
 		# figure out which beginline position to use
-		cur.beginline <- which( dfn == data.files.to.import )
+		cur.beginline <- which( tolower( dfn ) == tolower( data.files.to.import ) )
 		
 		# import the data file into R
 		x <- 
@@ -376,14 +382,14 @@ for ( year in years.to.download ){
 		names( x ) <- tolower( names( x ) )
 		
 		# rename the data table appropriately
-		assign( dfn , x )
+		assign( tolower( dfn ) , x )
 		
 		# save the current data.frame
 		# to the appropriate year folder
 		# within the current working directory
 		save( 
-			list = dfn , 
-			file = paste0( './' , year , "/" , dfn , ".rda" ) 
+			list = tolower( dfn ) , 
+			file = tolower( paste0( './' , year , "/" , dfn , ".rda" ) )
 		)
 
 	
@@ -398,6 +404,9 @@ for ( year in years.to.download ){
 				
 	}
 	
+	# revert the encoding for more effective deletion.
+	Encoding( files ) <- ''
+	
 	# remove the temporary files from the local disk
 	file.remove( tf , tf2 , files )
 	
@@ -406,17 +415,3 @@ for ( year in years.to.download ){
 # print a reminder: set the directory you just saved everything to as read-only!
 message( paste0( "all done.  you should set " , getwd() , " read-only so you don't accidentally alter these files." ) )
 
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

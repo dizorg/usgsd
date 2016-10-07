@@ -1,30 +1,21 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # area resource file
-# 2012-2013
+# 2015-2016
 
 # # # # # # # # # # # # # # # # #
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
 # library(downloader)
 # setwd( "C:/My Directory/ARF/" )
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/Area%20Resource%20File/analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Area%20Resource%20File/analysis%20examples.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 
@@ -33,15 +24,15 @@
 # prior to running this analysis script, the arf must be loaded as an R data file #
 # on the local machine.  running the download script will create this .rda        #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://github.com/ajdamico/usgsd/blob/master/Area%20Resource%20File/download.R #
+# https://github.com/ajdamico/asdfree/blob/master/Area%20Resource%20File/download.R #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# that script will create a file "arf2012.rda" with 'arf' in C:/My Directory/ARF  #
+# that script will create a file "arf2014.rda" with 'arf' in C:/My Directory/ARF  #
 ###################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 # set your working directory.
-# the ARF 2012-2013 data files should have been stored here
+# the ARF 2015-2016 data files should have been stored here
 # after running the program described above
 # use forward slashes instead of back slashes
 
@@ -50,8 +41,8 @@
 # ..in order to set your current working directory
 
 
-# load the 2012-2013 ARF data file
-load( "arf2012.rda" )
+# load the 2015-2016 ARF data file
+load( "arf2015.rda" )
 
 
 # now the 'arf' data frame is available in memory..
@@ -59,7 +50,7 @@ load( "arf2012.rda" )
 ncol( arf )
 
 
-# the "AHRF 2012-2013 Technical Documentation.xls" file in the current working directory contains field labels
+# the "AHRF 2015-2016 Technical Documentation.xls" file in the current working directory contains field labels
 # so create a smaller data table with only a few columns of interest
 # first, create a character vector containing only the columns you'll need:
 variables.to.keep <-
@@ -69,7 +60,6 @@ variables.to.keep <-
 		"f12424" , 			# state abbreviation
 		"f00010" , 			# county name
 		"f13156" , 			# ssa beneficiary county code
-		"f1389209" ,		# metro/micro statistical area name
 		"f0453010" ,		# 2010 census population
 		"f1212910"	 		# total active m.d.s non-federal & federal
 	)
@@ -84,7 +74,7 @@ head( arf.sub )
 
 
 # rename the variables something more user-friendly
-names( arf.sub ) <- c( "fips" , "state" , "stateab" , "county" , "ssa" , "mmsa" , "pop2010" , "md2010" )
+names( arf.sub ) <- c( "fips" , "state" , "stateab" , "county" , "ssa" , "pop2010" , "md2010" )
 
 # and re-examine the first six records
 head( arf.sub )
@@ -93,10 +83,10 @@ head( arf.sub )
 # run some simple summary statistics
 
 # in 2010, the census recorded a total us population of..
-sum( arf.sub$pop2010 )
+sum( arf.sub$pop2010 , na.rm = TRUE )
 
 # in 2010, the american medical association masterfile recorded this many active doctors..
-sum( arf.sub$md2010 )
+sum( arf.sub$md2010 , na.rm = TRUE )
 
 
 # when merging the arf to another data set,
@@ -113,11 +103,11 @@ length( unique( arf.sub$ssa ) )
 
 # because many counties with fips codes do not have ssa county codes
 # here's a few records where the ssa county code equals zero (missing)
-head( arf.sub[ arf.sub$ssa == 0 , ] )
+head( arf.sub[ arf.sub$ssa == '' , ] )
 
 
 # you could print all of them to the screen
-arf.sub[ arf.sub$ssa == 0 , ]
+arf.sub[ arf.sub$ssa == '' , ]
 # ..and find they're mostly the us territories.
 # because territories have fips but not ssa county codes
 
@@ -184,7 +174,7 @@ nrow( fakedata )
 
 # to merge the arf onto fakedata using the county ssa code,
 # try limiting the arf to only records with a non-zero ssa code
-arf.with.ssa <- subset( arf.sub , ssa != 0 )
+arf.with.ssa <- subset( arf.sub , ssa != '' )
 # count the number of records in fakedata
 nrow( fakedata )
 # perform the merge
@@ -202,7 +192,7 @@ nrow( fakedata )
 # follow the code presented at http://www.thisisthegreenroom.com/2009/choropleths-in-r/
 
 # install the maps package if you don't already have it
-install.packages( c( "maps" , "mapproj" ) )
+# install.packages( c( "maps" , "mapproj" ) )
 
 # load the maps and mapproj packages - both include mapping-related functions
 library(maps)
@@ -232,7 +222,7 @@ arf.sub$colorBuckets <- as.numeric( cut( arf.sub$dpp , cut.points , include.lowe
 # align data with map definitions by matching FIPS codes
 # works much better than trying to match the state, county names
 # which also include multiple polygons for some counties
-colorsmatched <- arf.sub$colorBuckets[ match( county.fips$fips , arf.sub$fips ) ]
+colorsmatched <- arf.sub$colorBuckets[ match( county.fips$fips , as.numeric( arf.sub$fips ) ) ]
 
 # create the legend's text
 # print the number of doctors per ten thousand people to the screen
@@ -264,17 +254,3 @@ map(
 title( "doctors per ten thousand people, 2010" )
 legend("topright", leg.txt, horiz = TRUE, fill = colors , cex = 0.75 )
 
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

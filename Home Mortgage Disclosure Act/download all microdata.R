@@ -1,54 +1,42 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # home mortgage disclosure act
-# 2006 - 2012 files
+# 2006 - 2014 files
 
 # # # # # # # # # # # # # # # # #
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
+# path.to.7z <- "7za"							# # only macintosh and *nix users need this line
 # library(downloader)
 # setwd( "C:/My Directory/HMDA/" )
-# years.to.download <- 2012:2006
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/Home%20Mortgage%20Disclosure%20Act/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# years.to.download <- 2014:2006
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Home%20Mortgage%20Disclosure%20Act/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
 
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
-
 
 ##################################################################################
-# download all 2006 - 2012 microdata for the home mortgage disclosure act with R #
+# download all 2006 - 2014 microdata for the home mortgage disclosure act with R #
 ##################################################################################
 
 
-
-# # # # # # # # # # # # # # #
-# warning: monetdb required #
-# # # # # # # # # # # # # # #
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-###################################################################################################################################
-# prior to running this analysis script, monetdb must be installed on the local machine.  follow each step outlined on this page: #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://github.com/ajdamico/usgsd/blob/master/MonetDB/monetdb%20installation%20instructions.R                                   #
-###################################################################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#####################################################################################################################################################
+# macintosh and *nix users need 7za installed:  http://superuser.com/questions/548349/how-can-i-install-7zip-so-i-can-run-it-from-terminal-on-os-x  #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# path.to.7z <- "7za"														# # this is probably the correct line for macintosh and *nix
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# the line above sets the location of the 7-zip program on your local computer. uncomment it by removing the `#` and change the directory if ya did #
+#####################################################################################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-
-# all 2006-2012 HMDA data files will be stored
+# all 2006-2014 HMDA data files will be stored
 # in a your current working directory
 # use forward slashes instead of back slashes
 
@@ -56,13 +44,12 @@
 # setwd( "C:/My Directory/HMDA/" )
 
 # remove the # in order to run this install.packages line only once
-# install.packages( c( "SAScii" , "R.utils" , "MonetDB.R" , "downloader" ) )
-
+# install.packages( c( "MonetDBLite" , "SAScii" , "descr" , "downloader" , "digest" , "R.utils" ) )
 
 # choose which hmda data sets to download
 # uncomment this line to download all available data sets
 # uncomment this line by removing the `#` at the front
-# years.to.download <- 2012:2006
+# years.to.download <- 2014:2006
 # if you have a big hard drive, hey why not download them all?
 
 # remove the `#` in order to just download 2011
@@ -75,19 +62,23 @@
 # program start #
 # # # # # # # # #
 
-
+# check if 7z is working
+if( ( .Platform$OS.type != 'windows' ) && ( system( paste0('"', path.to.7z , '" -h' ) ) != 0 ) ) stop("you need to install 7-zip")
 
 library(R.utils)		# load the R.utils package (counts the number of lines in a file quickly)
-library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(MonetDBLite)
+library(DBI)			# load the DBI package (implements the R-database coding)
 library(downloader)		# downloads and then runs the source() function on scripts from github
 library(SAScii) 		# load the SAScii package (imports ascii data with a SAS script)
 
+# this script's download files should be incorporated in download_cached's hash list
+options( "download_cached.hashwarn" = TRUE )
+# warn the user if the hash does not yet exist
 
-
-# load the download.cache and related functions
+# load the download_cached and related functions
 # to prevent re-downloading of files once they've been downloaded.
 source_url( 
-	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	"https://raw.githubusercontent.com/ajdamico/asdfree/master/Download%20Cache/download%20cache.R" , 
 	prompt = FALSE , 
 	echo = FALSE 
 )
@@ -96,100 +87,24 @@ source_url(
 # load the read.SAScii.monetdb() function,
 # which imports ASCII (fixed-width) data files directly into a monet database
 # using only a SAS importation script
-source_url( "https://raw.github.com/ajdamico/usgsd/master/MonetDB/read.SAScii.monetdb.R" , prompt = FALSE )
+source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/MonetDB/read.SAScii.monetdb.R" , prompt = FALSE )
 
 # create five temporary files and also a temporary directory on the local disk
 tf <- tempfile() ; tf2 <- tempfile() ; tf3 <- tempfile() ; tf4 <- tempfile() ; tf5 <- tempfile() ; td <- tempdir()
 
 
 # download the layout files for the loan applications received (lar) and institutional records (ins) data tables
-download.cache( "https://raw.github.com/ajdamico/usgsd/master/Home%20Mortgage%20Disclosure%20Act/lar_str.csv" , tf , FUN = download )
-download.cache( "https://raw.github.com/ajdamico/usgsd/master/Home%20Mortgage%20Disclosure%20Act/ins_str.csv" , tf2 , FUN = download )
+download_cached( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Home%20Mortgage%20Disclosure%20Act/lar_str.csv" , tf , FUN = download )
+download_cached( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Home%20Mortgage%20Disclosure%20Act/ins_str.csv" , tf2 , FUN = download )
 
 
 # configure a monetdb database for the hmda on windows #
 
-# note: only run this command once.  this creates an executable (.bat) file
-# in the appropriate directory on your local disk.
-# when adding new files or adding a new year of data, this script does not need to be re-run.
+# name the database files in the "MonetDB" folder of the current working directory
+dbfolder <- paste0( getwd() , "/MonetDB" )
 
-# create a monetdb executable (.bat) file for the home mortgage disclosure act data
-batfile <-
-	monetdb.server.setup(
-					
-					# set the path to the directory where the initialization batch file and all data will be stored
-					database.directory = paste0( getwd() , "/MonetDB" ) ,
-					# must be empty or not exist
-					
-					# find the main path to the monetdb installation program
-					monetdb.program.path = "C:/Program Files/MonetDB/MonetDB5" ,
-					
-					# choose a database name
-					dbname = "hmda" ,
-					
-					# choose a database port
-					# this port should not conflict with other monetdb databases
-					# on your local computer.  two databases with the same port number
-					# cannot be accessed at the same time
-					dbport = 50005
-	)
-
-
-
-# this next step is so very important.
-
-# store a line of code that will make it easy to open up the monetdb server in the future.
-# this should contain the same file path as the batfile created above,
-# you're best bet is to actually look at your local disk to find the full filepath of the executable (.bat) file.
-# if you ran this script without changes, the batfile will get stored in C:\My Directory\HMDA\MonetDB\hmda.bat
-
-# here's the batfile location:
-batfile
-
-# note that since you only run the `monetdb.server.setup()` function the first time this script is run,
-# you will need to note the location of the batfile for future MonetDB analyses!
-
-# in future R sessions, you can create the batfile variable with a line like..
-# batfile <- "C:/My Directory/HMDA/MonetDB/hmda.bat"
-# obviously, without the `#` comment character
-
-# hold on to that line for future scripts.
-# you need to run this line *every time* you access
-# the home mortgage disclosure act files with monetdb.
-# this is the monetdb server.
-
-# two other things you need: the database name and the database port.
-# store them now for later in this script, but hold on to them for other scripts as well
-dbname <- "hmda"
-dbport <- 50005
-
-# now the local windows machine contains a new executable program at "c:\my directory\hmda\monetdb\hmda.bat"
-
-# end of monetdb database configuration #
-
-
-# it's recommended that after you've _created_ the monetdb server,
-# you create a block of code like the one below to _access_ the monetdb server
-
-
-#####################################################################
-# lines of code to hold on to for all other `hmda` monetdb analyses #
-
-# first: specify your batfile.  again, mine looks like this:
-# uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/HMDA/MonetDB/hmda.bat"
-
-# second: run the MonetDB server
-pid <- monetdb.server.start( batfile )
-
-# third: your six lines to make a monet database connection.
-# just like above, mine look like this:
-dbname <- "hmda"
-dbport <- 50005
-
-monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
-
+# open the connection to the monetdblite database
+db <- dbConnect( MonetDBLite::MonetDBLite() , dbfolder )
 
 
 # # # # run your analysis commands # # # #
@@ -229,8 +144,10 @@ office.names <- tolower( parse.SAScii( tf4 )$varname )
 # loop through each of the years to download..
 for ( year in substr( years.to.download , 3 , 4 ) ){
 
+	if( year == "14" ) one_two <- 'hmda' else one_two <- c( 'hmda' , 'pmic' )
+
 	# loop through both the public (hmda) and private (pmic) data files..
-	for ( pubpriv in c( 'hmda' , 'pmic' ) ){
+	for ( pubpriv in one_two ){
 
 		# reporter panel, msa_md with home, msa office do not exist in 2006, so skip it.
 		if ( as.numeric( year ) > 6 ){
@@ -239,17 +156,16 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 			
 			# the 2007, 2008, and 2009 reporter panel sas importation scripts are different from post-2009
 			if ( as.numeric( year ) < 10 ){
-				sas_ri <- "https://raw.github.com/ajdamico/usgsd/master/Home%20Mortgage%20Disclosure%20Act/Reporter%20Panel%20Pre-2010.sas"
+				sas_ri <- "https://raw.githubusercontent.com/ajdamico/asdfree/master/Home%20Mortgage%20Disclosure%20Act/Reporter%20Panel%20Pre-2010.sas"
 			} else {
-				sas_ri <- "https://raw.github.com/ajdamico/usgsd/master/Home%20Mortgage%20Disclosure%20Act/Reporter%20Panel%202010.sas"
+				sas_ri <- "https://raw.githubusercontent.com/ajdamico/asdfree/master/Home%20Mortgage%20Disclosure%20Act/Reporter%20Panel%202010.sas"
 			}
 		
 			# download the sas importation instructions to a temporary file on the local disk
-			download.cache( sas_ri , tf3 , FUN = download )
-
+			download_cached( sas_ri , tf3 , FUN = download )
 
 			# construct the url of the current `ReporterPanel.zip` to download
-			fn <- paste0( "http://www.ffiec.gov/" , pubpriv , "rawdata/OTHER/20" , year , pubpriv , "ReporterPanel.zip" )
+			fn <- paste0( "https://www.ffiec.gov/" , pubpriv , "rawdata/OTHER/20" , year , toupper( pubpriv ) , "ReporterPanel.zip" )
 
 			
 			# read that temporary file directly into MonetDB,
@@ -257,17 +173,17 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 			read.SAScii.monetdb (
 				fn ,			# the url of the file to download
 				tf3 ,			# the 
-				zipped = T ,	# the ascii file is stored in a zipped file
+				zipped = TRUE ,	# the ascii file is stored in a zipped file
 				tl = TRUE ,		# convert all column names to lowercase
 				tablename = paste( pubpriv , 'rep' , year , sep = "_" ) ,
 				connection = db
 			)
 
 			# construct the url of the current `MSAOffice.zip`
-			fn <- paste0( "http://www.ffiec.gov/" , pubpriv , "rawdata/OTHER/20" , year , pubpriv , "MSAOffice.zip" )
+			fn <- paste0( "https://www.ffiec.gov/" , pubpriv , "rawdata/OTHER/20" , year , toupper( pubpriv ) , "MSAOffice.zip" )
 			
 			# download that file..
-			download.cache( fn , tf5 , mode = 'wb' )
+			download_cached( fn , tf5 , mode = 'wb' )
 			
 			# ..and extract it to the temporary directory
 			z <- unzip( tf5 , exdir = td )
@@ -283,6 +199,8 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 					col.names = office.names
 				)
 				
+			names( msa_ofc ) <- tolower( names( msa_ofc ) )
+				
 			# write the `msa` table into the database directly
 			dbWriteTable( db , paste( pubpriv , 'msa' , year , sep = "_" ) , msa_ofc )
 			
@@ -292,7 +210,7 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 			# clear up RAM
 			gc()
 			
-		}
+		} else z <- tempfile()
 		
 		# cycle through both institutional records and loan applications received microdata files
 		for ( rectype in c( "institutionrecords" , "lar%20-%20National" ) ){
@@ -310,7 +228,7 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 			sql.create <- sprintf( paste( "CREATE TABLE" , tablename , "(%s)" ) , paste( col_str , collapse = ", " ) )
 
 			# initiate the monetdb table
-			dbSendUpdate( db , sql.create )
+			dbSendQuery( db , sql.create )
 
 			# find the url folder and the appropriate delimiter line for the monetdb COPY INTO command
 			if ( short.name == "lar" ){
@@ -326,14 +244,37 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 			}
 						
 			# construct the full url path of the file to download
-			fn <- paste0( "http://www.ffiec.gov/" , pubpriv , "rawdata/" , folder , "/20" , year , pubpriv , rectype , ".zip" )
+			fn <- paste0( "https://www.ffiec.gov/" , pubpriv , "rawdata/" , folder , "/20" , year , toupper( pubpriv ) , rectype , ".zip" )
 
+			# clear out the temporary directory
+			file.remove( list.files( td , full.names = TRUE ) )
+			
 			# download the url into a temporary file on your local disk
-			download.cache( fn , tf , mode = 'wb' )
+			download_cached( fn , tf , mode = 'wb' )
 
-			# unzip the csv file
-			csv.file <- unzip( tf , exdir = td )
+			# unzip the file's contents to the temporary directory
+			# extract the file, platform-specific
+			if ( .Platform$OS.type == 'windows' ){
 
+				csv.file <- unzip( tf , exdir = td , overwrite = TRUE )
+
+			} else {
+			
+				files.before <- list.files( td , full.names = TRUE )
+
+				# build the string to send to the terminal on non-windows systems
+				dos.command <- paste0( '"' , path.to.7z , '" x ' , tf , ' -aoa -o"' , td , '"' )
+
+				system( dos.command )
+
+				csv.file <- list.files( td , full.names = TRUE )
+
+				csv.file <- csv.file[ !( csv.file %in% files.before ) ]
+				
+			}
+			
+			
+			
 			# construct the monetdb COPY INTO command
 			sql.copy <- 
 				paste0( 
@@ -347,7 +288,7 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 				)
 				
 			# actually execute the COPY INTO command
-			dbSendUpdate( db , sql.copy )
+			dbSendQuery( db , sql.copy )
 		
 			# conversion of numeric columns incorrectly stored as character strings #
 		
@@ -361,22 +302,22 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 			for ( col.rev in field.revisions ){
 
 				# add a new `temp_double` column in the data table
-				dbSendUpdate( db , paste( "ALTER TABLE" , tablename , "ADD COLUMN temp_double DOUBLE" ) )
+				dbSendQuery( db , paste( "ALTER TABLE" , tablename , "ADD COLUMN temp_double DOUBLE" ) )
 
 				# copy over the contents of the character-typed column so long as the column isn't a textual missing
-				dbSendUpdate( db , paste( "UPDATE" , tablename , "SET temp_double = CAST(" , col.rev , " AS DOUBLE ) WHERE NOT ( " , col.rev , " = 'NA    ' ) AND NOT ( " , col.rev , " = 'NA      ' )" ) )
+				dbSendQuery( db , paste( "UPDATE" , tablename , "SET temp_double = CAST(" , col.rev , " AS DOUBLE ) WHERE TRIM(" , col.rev , ") <> 'NA'" ) )
 				
 				# remove the character-typed column from the data table
-				dbSendUpdate( db , paste( "ALTER TABLE" , tablename , "DROP COLUMN" , col.rev ) )
+				dbSendQuery( db , paste( "ALTER TABLE" , tablename , "DROP COLUMN" , col.rev ) )
 				
 				# re-initiate the same column name, but as a numeric type
-				dbSendUpdate( db , paste( "ALTER TABLE" , tablename , "ADD COLUMN" , col.rev , "DOUBLE" ) )
+				dbSendQuery( db , paste( "ALTER TABLE" , tablename , "ADD COLUMN" , col.rev , "DOUBLE" ) )
 				
 				# copy the corrected contents back to the original column name
-				dbSendUpdate( db , paste( "UPDATE" , tablename , "SET" , col.rev , "= temp_double" ) )
+				dbSendQuery( db , paste( "UPDATE" , tablename , "SET" , col.rev , "= temp_double" ) )
 				
 				# remove the temporary column from the data table
-				dbSendUpdate( db , paste( "ALTER TABLE" , tablename , "DROP COLUMN temp_double" ) )
+				dbSendQuery( db , paste( "ALTER TABLE" , tablename , "DROP COLUMN temp_double" ) )
 
 			}
 
@@ -435,7 +376,7 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 			)
 		
 		# with your sql string built, execute the command
-		dbSendUpdate( db , sql.merge.command )
+		dbSendQuery( db , sql.merge.command )
 		
 		# step three: confirm that the merged table contains the same record count
 		stopifnot( 
@@ -460,11 +401,11 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 		# # # # # # # # # # # # # # # # # #
 		
 		# number of minority races of applicant and co-applicant
-		dbSendUpdate( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN app_min_cnt INTEGER' ) )
-		dbSendUpdate( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN co_min_cnt INTEGER' ) )
+		dbSendQuery( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN app_min_cnt INTEGER' ) )
+		dbSendQuery( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN co_min_cnt INTEGER' ) )
 
 		# sum up all four possibilities
-		dbSendUpdate( 
+		dbSendQuery( 
 			db , 
 			paste(
 				'UPDATE' ,
@@ -482,7 +423,7 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 		)
 
 		# same for the co-applicant
-		dbSendUpdate( 
+		dbSendQuery( 
 			db , 
 			paste(
 				'UPDATE' ,
@@ -500,11 +441,11 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 		)
 
 		# zero-one test of whether the applicant or co-applicant indicated white
-		dbSendUpdate( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN appwhite INTEGER' ) )
-		dbSendUpdate( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN cowhite INTEGER' ) )
+		dbSendQuery( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN appwhite INTEGER' ) )
+		dbSendQuery( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN cowhite INTEGER' ) )
 
 		# check all five race categories for the answer
-		dbSendUpdate( 
+		dbSendQuery( 
 			db , 
 			paste(
 				'UPDATE' ,
@@ -522,7 +463,7 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 		)
 
 		# same for the co-applicant
-		dbSendUpdate( 
+		dbSendQuery( 
 			db , 
 			paste(
 				'UPDATE' ,
@@ -540,38 +481,38 @@ for ( year in substr( years.to.download , 3 , 4 ) ){
 		)
 
 		# if the applicant or co-applicant has a missing first race, set the above variables to missing as well
-		dbSendUpdate( db , paste( 'UPDATE' , new.tablename , 'SET app_min_cnt = NULL WHERE applicantrace1 IN ( 6 , 7 )' ) )
-		dbSendUpdate( db , paste( 'UPDATE' , new.tablename , 'SET appwhite = NULL WHERE applicantrace1 IN ( 6 , 7 )' ) )
-		dbSendUpdate( db , paste( 'UPDATE' , new.tablename , 'SET co_min_cnt = NULL WHERE coapplicantrace1 IN ( 6 , 7 , 8 )' ) )
-		dbSendUpdate( db , paste( 'UPDATE' , new.tablename , 'SET cowhite = NULL WHERE coapplicantrace1 IN ( 6 , 7 , 8 )' ) )
+		dbSendQuery( db , paste( 'UPDATE' , new.tablename , 'SET app_min_cnt = NULL WHERE applicantrace1 IN ( 6 , 7 )' ) )
+		dbSendQuery( db , paste( 'UPDATE' , new.tablename , 'SET appwhite = NULL WHERE applicantrace1 IN ( 6 , 7 )' ) )
+		dbSendQuery( db , paste( 'UPDATE' , new.tablename , 'SET co_min_cnt = NULL WHERE coapplicantrace1 IN ( 6 , 7 , 8 )' ) )
+		dbSendQuery( db , paste( 'UPDATE' , new.tablename , 'SET cowhite = NULL WHERE coapplicantrace1 IN ( 6 , 7 , 8 )' ) )
 
 		# main race variable
-		dbSendUpdate( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN race INTEGER' ) )
+		dbSendQuery( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN race INTEGER' ) )
 
 		# 7 indicates a loan by a white applicant and non-white co-applicant or vice-versa
-		dbSendUpdate( db , paste( 'UPDATE' , new.tablename , 'SET race = 7 WHERE ( appwhite = 1 AND app_min_cnt = 0 AND co_min_cnt > 0 ) OR ( cowhite = 1 AND co_min_cnt = 0 AND app_min_cnt > 0 )' ) )
+		dbSendQuery( db , paste( 'UPDATE' , new.tablename , 'SET race = 7 WHERE ( appwhite = 1 AND app_min_cnt = 0 AND co_min_cnt > 0 ) OR ( cowhite = 1 AND co_min_cnt = 0 AND app_min_cnt > 0 )' ) )
 
 		# 6 indicates the main applicant listed multiple non-white races
-		dbSendUpdate( db , paste( 'UPDATE' , new.tablename , 'SET race = 6 WHERE ( app_min_cnt > 1 ) AND ( race IS NULL )' ) )
+		dbSendQuery( db , paste( 'UPDATE' , new.tablename , 'SET race = 6 WHERE ( app_min_cnt > 1 ) AND ( race IS NULL )' ) )
 
 		# for everybody else: if the first race listed by the applicant isn't white, use that.
-		dbSendUpdate( db , paste( "UPDATE" , new.tablename , "SET race = applicantrace1 WHERE ( applicantrace1 IN ( '1' , '2' , '3' , '4' ) ) AND ( app_min_cnt = 1 ) AND ( race IS NULL )" ) )
+		dbSendQuery( db , paste( "UPDATE" , new.tablename , "SET race = applicantrace1 WHERE ( applicantrace1 IN ( '1' , '2' , '3' , '4' ) ) AND ( app_min_cnt = 1 ) AND ( race IS NULL )" ) )
 		# otherwise look to the second listed race
-		dbSendUpdate( db , paste( "UPDATE" , new.tablename , "SET race = applicantrace2 WHERE ( applicantrace2 IN ( '1' , '2' , '3' , '4' ) ) AND ( app_min_cnt = 1 ) AND ( race IS NULL )" ) )
+		dbSendQuery( db , paste( "UPDATE" , new.tablename , "SET race = applicantrace2 WHERE ( applicantrace2 IN ( '1' , '2' , '3' , '4' ) ) AND ( app_min_cnt = 1 ) AND ( race IS NULL )" ) )
 		# otherwise confirm the applicant indicated he or she was white
-		dbSendUpdate( db , paste( 'UPDATE' , new.tablename , "SET race = 5 WHERE ( appwhite = 1 ) AND ( race IS NULL )" ) )
+		dbSendQuery( db , paste( 'UPDATE' , new.tablename , "SET race = 5 WHERE ( appwhite = 1 ) AND ( race IS NULL )" ) )
 
 		# main ethnicity variable
-		dbSendUpdate( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN ethnicity VARCHAR (255)' ) )
+		dbSendQuery( db , paste( 'ALTER TABLE' , new.tablename , 'ADD COLUMN ethnicity VARCHAR (255)' ) )
 
 		# simple.  check the applicant's ethnicity
-		dbSendUpdate( db , paste( "UPDATE" , new.tablename , "SET ethnicity = 'Not Hispanic' WHERE applicantethnicity IN ( 2 )" ) )
+		dbSendQuery( db , paste( "UPDATE" , new.tablename , "SET ethnicity = 'Not Hispanic' WHERE applicantethnicity IN ( 2 )" ) )
 		
 		# simple.  check the applicant's ethnicity again
-		dbSendUpdate( db , paste( "UPDATE" , new.tablename , "SET ethnicity = 'Hispanic' WHERE applicantethnicity IN ( 1 )" ) )
+		dbSendQuery( db , paste( "UPDATE" , new.tablename , "SET ethnicity = 'Hispanic' WHERE applicantethnicity IN ( 1 )" ) )
 		
 		# overwrite the ethnicity variable if the main applicant indicates hispanic but the co-applicant does not.  or vice versa.
-		dbSendUpdate( db , paste( "UPDATE" , new.tablename , "SET ethnicity = 'Joint' WHERE ( applicantethnicity IN ( 1 ) AND coapplicantethnicity IN ( 2 ) ) OR ( applicantethnicity IN ( 2 ) AND coapplicantethnicity IN ( 1 ) )" ) )
+		dbSendQuery( db , paste( "UPDATE" , new.tablename , "SET ethnicity = 'Joint' WHERE ( applicantethnicity IN ( 1 ) AND coapplicantethnicity IN ( 2 ) ) OR ( applicantethnicity IN ( 2 ) AND coapplicantethnicity IN ( 1 ) )" ) )
 
 		# # # # # # # # # # # # # # # # # # # # # # # # #
 		# # finished with race and ethnicity recoding # #
@@ -602,63 +543,10 @@ file.remove( tf , tf2 , tf3 , tf4 , tf5 , z , csv.file )
 dbListTables( db )		# print the tables stored in the current monet database to the screen
 
 
-# disconnect from the current monet database
-dbDisconnect( db )
-
-# and close it using the `pid`
-monetdb.server.stop( pid )
-
-
-
-
-#####################################################################
-# lines of code to hold on to for all other `hmda` monetdb analyses #
-
-# first: specify your batfile.  again, mine looks like this:
-# uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/HMDA/MonetDB/brfss.bat"
-
-# second: run the MonetDB server
-pid <- monetdb.server.start( batfile )
-
-# third: your five lines to make a monet database connection.
-# just like above, mine look like this:
-dbname <- "hmda"
-dbport <- 50005
-
-monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
-
-
-# # # # run your analysis commands # # # #
+# set every table you've just created as read-only inside the database.
+for ( this_table in dbListTables( db ) ) dbSendQuery( db , paste( "ALTER TABLE" , this_table , "SET READ ONLY" ) )
 
 
 # disconnect from the current monet database
-dbDisconnect( db )
+dbDisconnect( db , shutdown = TRUE )
 
-# and close it using the `pid`
-monetdb.server.stop( pid )
-
-# end of lines of code to hold on to for all other `hmda` monetdb analyses #
-############################################################################
-
-
-# unlike most post-importation scripts, the monetdb directory cannot be set to read-only #
-message( paste( "all done.  DO NOT set" , getwd() , "read-only or subsequent scripts will not work." ) )
-
-message( "got that? monetdb directories should not be set read-only." )
-
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

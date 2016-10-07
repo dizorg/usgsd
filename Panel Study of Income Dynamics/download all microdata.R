@@ -6,28 +6,20 @@
 # # # # # # # # # # # # # # # # #
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
+# options( encoding = "windows-1252" )		# # only macintosh and *nix users need this line
 # library(downloader)
 # setwd( "C:/My Directory/PSID/" )
 # your.username <- 'your@login.com'
 # your.password <- 'yourpassword'
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/Panel%20Study%20of%20Income%20Dynamics/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Panel%20Study%20of%20Income%20Dynamics/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 ####################################################################################
@@ -74,6 +66,16 @@
 # setwd( "C:/My Directory/PSID/" )
 # ..in order to set your current working directory
 
+
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# the cdc's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="windows-1252" )
+# ..to turn on windows-style encoding.
+# # # end of non-windows system edits.
 
 
 # remove the # in order to run this install.packages line only once
@@ -122,13 +124,24 @@ viewstate <-
 		)
 	)
 
+# extract the `eventvalidation` string
+eventvalidation <- 
+	as.character(
+		sub(
+			'.*id="__EVENTVALIDATION" value="([0-9a-zA-Z+/=]*).*' , 
+			'\\1' , 
+			html
+		)
+	)
+
 # construct a list full of parameters to pass to the umich website
 params <- 
 	list(
-		'ctl00$ContentPlaceHolder3$Login1$UserName'    = your.username ,
-		'ctl00$ContentPlaceHolder3$Login1$Password'    = your.password ,
-		'ctl00$ContentPlaceHolder3$Login1$LoginButton' = 'Log In' ,
-		'__VIEWSTATE'                                  = viewstate
+		'ctl00$ContentPlaceHolder1$Login1$UserName'    = your.username ,
+		'ctl00$ContentPlaceHolder1$Login1$Password'    = your.password ,
+		'ctl00$ContentPlaceHolder1$Login1$LoginButton' = 'Log In' ,
+		'__VIEWSTATE'                                  = viewstate ,
+		'__EVENTVALIDATION'                            = eventvalidation
     )
 # and now, with the username, password, and viewstate parameters all squared away
 # it's time to start downloading individual files from the umich website	
@@ -143,7 +156,7 @@ save.psid <-
 	function( file , name , params , curl ){
 
 		# logs into the umich form
-		html = postForm('http://simba.isr.umich.edu/u/Login.aspx', .params = params, curl = curl)
+		html = postForm('http://simba.isr.umich.edu/U/Login.aspx', .params = params, curl = curl)
 		
 		# confirms the result's contents contains the word `Logout` because
 		# if it does not contain this text, you're not logged in.  sorry.
@@ -214,8 +227,8 @@ save.psid <-
 # (note: you may have to be logged in to see those files)
 family <-
 	data.frame(
-		year = c( 1968:1997 , seq( 1999 , 2011 , 2 ) ) ,
-		file = c( 1056 , 1058:1082 , 1047:1051 , 1040 , 1052 , 1132 , 1139 , 1152 , 1156 )
+		year = c( 1968:1997 , seq( 1999 , 2013 , 2 ) ) ,
+		file = c( 1056 , 1058:1082 , 1047:1051 , 1040 , 1052 , 1132 , 1139 , 1152 , 1156 , 1164 )
 	)
 
 # loop through each record in the `family` file..
@@ -232,17 +245,3 @@ save.psid( 1109 , 'childbirth' , params , curl )
 save.psid( 1123 , 'parentid' , params , curl )
 save.psid( 1053 , 'ind' , params , curl )
 
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

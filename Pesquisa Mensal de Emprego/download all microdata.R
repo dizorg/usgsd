@@ -4,26 +4,21 @@
 # # # # # # # # # # # # # # # # #
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
+# options( encoding = "windows-1252" )		# # only macintosh and *nix users need this line
 # library(downloader)
 # setwd( "C:/My Directory/PME/" )
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/Pesquisa%20Mensal%20de%20Emprego/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Pesquisa%20Mensal%20de%20Emprego/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
+
+# djalma pessoa
+# pessoad@gmail.com
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 #################################################
@@ -41,6 +36,17 @@
 # ..in order to set your current working directory
 
 
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# ibge's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="windows-1252" )
+# ..to turn on windows-style encoding.
+# # # end of non-windows system edits.
+
+
 # if you want to overwrite previously-download files
 # redownload.all <- TRUE
 # uncomment the above line.
@@ -48,15 +54,9 @@
 # then this program will, by default, _not_ re-download
 # pme months that are already saved in your current working directory
 
-# warning: this command must be run before any other
-# internet-accessing lines in the session
-setInternet2(TRUE)
-# you also might need administrative rights
-
-
 
 # remove the # in order to run this install.packages line only once
-# install.packages( c( "SAScii" , "downloader" ) )
+# install.packages( c( "SAScii" , "downloader" , "digest" , "RCurl" ) )
 
 
 ############################################
@@ -69,12 +69,13 @@ setInternet2(TRUE)
 
 library(SAScii) 	# load the SAScii package (imports ascii data with a SAS script)
 library(downloader)	# downloads and then runs the source() function on scripts from github
+library(RCurl)		# load RCurl package (downloads https files)
 
 
-# load the download.cache and related functions
+# load the download_cached and related functions
 # to prevent re-downloading of files once they've been downloaded.
 source_url( 
-	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	"https://raw.githubusercontent.com/ajdamico/asdfree/master/Download%20Cache/download%20cache.R" , 
 	prompt = FALSE , 
 	echo = FALSE 
 )
@@ -85,7 +86,7 @@ tf <- tempfile() ; td <- tempdir()
 
 
 # download the sas importation scripts..
-download.cache( 
+download( 
 	"ftp://ftp.ibge.gov.br/Trabalho_e_Rendimento/Pesquisa_Mensal_de_Emprego/Microdados/documentacao/Documentacao.zip" , 
 	tf 
 )
@@ -99,13 +100,6 @@ z <- unzip( tf , exdir = td )
 input <- z[ grep( "INPUT" , z ) ]
 
 
-# download the contents of the ftp directory for all microdata
-download.cache(
-	"ftp://ftp.ibge.gov.br/Trabalho_e_Rendimento/Pesquisa_Mensal_de_Emprego/Microdados/" , 
-	tf
-)
-
-
 # if this object does not exist, then create it
 # (see `redownload.all` note above) for more detail
 # about what it does
@@ -113,36 +107,31 @@ if ( !exists( 'redownload.all' ) ) redownload.all <- FALSE
 
 
 # read the text of the microdata ftp into working memory
-ftp.listing <- readLines( tf )
+# download the contents of the ftp directory for all microdata
+ftp.listing <- readLines( textConnection( getURL( "ftp://ftp.ibge.gov.br/Trabalho_e_Rendimento/Pesquisa_Mensal_de_Emprego/Microdados/" ) ) )
 
 # extract the text from all lines containing a year of microdata
-year.lines <- ftp.listing[ grep( '/Microdados/20' , ftp.listing , fixed = TRUE ) ]
-
 # figure out the names of those year directories
-available.years <- rev( gsub( "(.*<B>)(.*)(</B>.*)" , "\\2" , year.lines ) )
+ay <- rev( gsub( "(.*) (.*)" , "\\2" , ftp.listing ) )
+
+# remove non-numeric strings
+available.years <- ay[ as.numeric( ay ) %in% ay ]
 # now `available.years` should contain all of the available years on the pme ftp site
 
 # loop through each of the available years
 for ( year in available.years ){
 
-	# take a look inside the year-specific ftp filepath
-	download.cache(
-		paste0(
-			"ftp://ftp.ibge.gov.br/Trabalho_e_Rendimento/Pesquisa_Mensal_de_Emprego/Microdados/" , 
-			year 
-		) , 
-		tf
-	)
+	# define path of this year
+	this.year <- paste0( "ftp://ftp.ibge.gov.br/Trabalho_e_Rendimento/Pesquisa_Mensal_de_Emprego/Microdados/" , year , "/" )
 
 	# just like above, read those lines into working memory
-	year.ftp.listing <- readLines( tf )
+	year.ftp.string <- readLines( textConnection( getURL( this.year ) ) )
 	
-	# store each line containing the text `.zip`
-	# into a character vector `zip.lines`
-	zip.lines <- year.ftp.listing[ grep( '.zip' , year.ftp.listing , fixed = TRUE ) ]
+	# break up the string based on the ending extension
+	zip.lines <- unlist( strsplit( year.ftp.string , "\\.zip$" ) )
 	
 	# extract the precise filename of the `.zip` file
-	zip.filenames <- gsub( '(.*zip\">)(.*)</A>' , "\\2" , zip.lines )
+	zip.filenames <- gsub( '(.*) (.*)' , "\\2.zip" , zip.lines )
 
 	# in 2008, the files are named by three-letter month.
 	# in portuguese, sorted alphabetically, april is the first month, followed by august, and so on.
@@ -209,7 +198,7 @@ for ( year in available.years ){
 			)
 		
 		# try to download the zipped file..
-		attempt.one <- try( download.cache( current.zipfile , tf , mode = 'wb' ) , silent = TRUE )
+		attempt.one <- try( download_cached( current.zipfile , tf , mode = 'wb' ) , silent = TRUE )
 		
 		# ..but if the first attempt fails,
 		# wait for three minutes and try again.
@@ -217,7 +206,7 @@ for ( year in available.years ){
 
 			Sys.sleep( 180 )
 			
-			download.cache( current.zipfile , tf , mode = 'wb' )
+			download_cached( current.zipfile , tf , mode = 'wb' )
 			
 		}
 			
@@ -258,17 +247,3 @@ unlink( td , recursive = TRUE )
 # print a reminder: set the directory you just saved everything to as read-only!
 message( paste0( "all done.  you should set the file " , getwd() , " read-only so you don't accidentally alter these tables." ) )
 
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

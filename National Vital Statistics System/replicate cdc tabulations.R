@@ -7,25 +7,15 @@
 # # # # # # # # # # # # # # # # #
 # library(downloader)
 # setwd( "C:/My Directory/NVSS/" )
-# batfile <- "C:/My Directory/NVSS/MonetDB/nvss.bat"
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Vital%20Statistics%20System/replicate%20cdc%20tabulations.R" , prompt = FALSE , echo = TRUE )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Vital%20Statistics%20System/replicate%20cdc%20tabulations.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 # this r script will replicate statistics found on four different
@@ -37,23 +27,16 @@
 #####################################################################################################################
 # prior to running this analysis script, the national vital statistics system files must be imported into           #
 # a monet database on the local machine. you must run this:                                                         #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://raw.github.com/ajdamico/usgsd/master/National%20Vital%20Statistics%20System/download%20all%20microdata.R  #
-#####################################################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Vital%20Statistics%20System/download%20all%20microdata.R #
+#################################################################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-# # # # # # # # # # # # # # #
-# warning: monetdb required #
-# # # # # # # # # # # # # # #
+library(MonetDBLite)
+library(DBI)			# load the DBI package (implements the R-database coding)
 
 
-library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
-
-
-# in most monetdb scripts, specifying the .bat file (to launch the server) suffices
-# however, since the fetal death files are stored in R data files (.rda) on the local disk,
-# any usage of those files also requires that the working directory be specified.
 # setwd( "C:/My Directory/NVSS/" )
 # uncomment the line above (remove the `#`) to set the working directory to C:\My Directory\NVSS
 
@@ -62,27 +45,12 @@ library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
 # to initiate and connect to the monet database containing the
 # national vital statistics system files.  run them now.  mine look like this:
 
+# name the database files in the "MonetDB" folder of the current working directory
+dbfolder <- paste0( getwd() , "/MonetDB" )
 
-#####################################################################
-# lines of code to hold on to for all other `nvss` monetdb analyses #
+# open the connection to the monetdblite database
+db <- dbConnect( MonetDBLite::MonetDBLite() , dbfolder )
 
-# first: specify your batfile.  again, mine looks like this:
-# uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/NVSS/MonetDB/nvss.bat"
-
-# second: run the MonetDB server
-pid <- monetdb.server.start( batfile )
-
-# third: your five lines to make a monet database connection.
-# just like above, mine look like this:
-dbname <- "nvss"
-dbport <- 50012
-
-monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
-
-# end of lines of code to hold on to for all other nvss monetdb analyses #
-##########################################################################
 
 
 # # # # # # # # # # # # #
@@ -186,28 +154,6 @@ for ( year in 2005:2007 ){
 # # # # # # # # # # # # # # # # #
 
 
-##############################################################################
-# lines of code to hold on to for the end of all other nvss monetdb analyses #
-
 # disconnect from the current monet database
-dbDisconnect( db )
+dbDisconnect( db , shutdown = TRUE )
 
-# and close it using the `pid`
-monetdb.server.stop( pid )
-
-# end of lines of code to hold on to for all other nvss monetdb analyses #
-##########################################################################
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

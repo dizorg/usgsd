@@ -1,4 +1,4 @@
-# this is a slight modification of the monet.read.csv function found in the MonetDB.R package
+# this is a slight modification of the monet.read.csv function found in the MonetDBLite package
 # this is particularly useful alongside the descr package's fwf2csv function,
 # which converts ascii files to tab-separated files.  this new monet.read.tsv will read in those straightaway!
 
@@ -11,19 +11,25 @@ monet.read.tsv <-
 		locked = FALSE , 
 		na.strings = "" , 
 		nrow.check = 500 ,
-		structure = NULL
+		structure = NULL ,
+		delimiters = "'\t'" ,
+		lower.case.names = FALSE
 	) {
     
 	if (length(na.strings) > 1) stop("na.strings must be of length 1")
 
 	# if a structure file is passed in
 	if ( !is.null( structure ) ){
+		
+		if( lower.case.names ) names( structure ) <- tolower( names( structure ) )
+		
 		dbWriteTable(conn, tablename, structure[FALSE, ])
+		
 	} else {
 	
 		# otherwise, determine headers yourself
 		
-		headers <- lapply(files, read.table, header = TRUE , sep = '\t' , na.strings = "NA", nrows = nrow.check)
+		headers <- lapply(files, read.table, header = header , sep = '\t' , na.strings = na.strings , nrows = nrow.check)
 		
 		if (length(files) > 1) {
 			nn <- sapply(headers, ncol)
@@ -34,6 +40,8 @@ monet.read.tsv <-
 			if (!all(types == types[, 1])) stop("Files have different variable types")
 		}
 	
+		if( lower.case.names ) names( headers ) <- tolower( names( headers ) )
+		
 		dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
 	}
 	
@@ -42,7 +50,7 @@ monet.read.tsv <-
         if (length(nrows) == 1) nrows <- rep(nrows, length(files))
         for (i in seq_along(files)) {
             cat(files[i], thefile <- normalizePath(files[i]), "\n")
-            dbSendUpdate(
+            dbSendQuery(
 				conn , 
 				paste(
 					"copy", 
@@ -51,7 +59,9 @@ monet.read.tsv <-
 					tablename, 
 					"from", 
 					paste("'", thefile, "'", sep = ""), 
-					"using delimiters '\t' NULL as", 
+					"using delimiters" ,
+					delimiters ,
+					"NULL as", 
 					paste("'", na.strings[1], "'", sep = ""), 
 					if (locked) "LOCKED"
 				)
@@ -60,14 +70,16 @@ monet.read.tsv <-
     } else {
         for (i in seq_along(files)) {
             cat(files[i], thefile <- normalizePath(files[i]), "\n")
-            dbSendUpdate(
+            dbSendQuery(
 				conn, 
 				paste(
 					"copy into", 
 					tablename, 
 					"from", 
 					paste("'", thefile, "'", sep = ""), 
-					"using delimiters '\t' NULL as ", 
+					"using delimiters" ,
+					delimiters ,
+					"NULL as ", 
 					paste("'", na.strings[1], "'", sep = ""), 
 					if (locked)"LOCKED"
 				)

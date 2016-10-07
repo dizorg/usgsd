@@ -4,54 +4,58 @@
 # # # # # # # # # # # # # # # # #
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
+# options( encoding = "windows-1252" )			# # only macintosh and *nix users need this line
 # library(downloader)
-# batfile <- "C:/My Directory/NPPES/nppes.bat"
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Plan%20and%20Provider%20Enumeration%20System/merge%20taxonomy%20ids.R" , prompt = FALSE , echo = TRUE )
+# setwd( "C:/My Directory/NPPES/" )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Plan%20and%20Provider%20Enumeration%20System/merge%20taxonomy%20ids.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
 
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
-
 
 # this r script will merge the taxonomy id (specialty code) table available at:
-# https://raw.github.com/ajdamico/usgsd/master/National%20Plan%20and%20Provider%20Enumeration%20System/taxonomy%20id%20table.txt
+# https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Plan%20and%20Provider%20Enumeration%20System/taxonomy%20id%20table.txt
 
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-###################################################################################################################################
-# prior to running this analysis script, the national plan and provider enumeration system must be imported into a monet database #
-# on the local machine. you must run this:                                                                                        #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://raw.github.com/ajdamico/usgsd/master/National%20Plan%20and%20Provider%20Enumeration%20System/download%20and%20import.R  #
-###################################################################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#####################################################################################################################################
+# prior to running this analysis script, the national plan and provider enumeration system must be imported into a monet database   #
+# on the local machine. you must run this:                                                                                          #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Plan%20and%20Provider%20Enumeration%20System/download%20and%20import.R  #
+#####################################################################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-# # # # # # # # # # # # # # #
-# warning: monetdb required #
-# # # # # # # # # # # # # # #
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# ibge's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="windows-1252" )
+# ..to turn on windows-style encoding.
+# # # end of non-windows system edits.
 
 
 # remove the # in order to run this install.packages line only once
-# install.packages( c( "stringr" , "downloader" ) )
+# install.packages( "stringr" )
 
 
-library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
-library(stringr)	# load stringr package (manipulates character strings easily)
-library(downloader)	# downloads and then runs the source() function on scripts from github
+# uncomment this line by removing the `#` at the front..
+# setwd( "C:/My Directory/NPPES/" )
+# ..in order to set your current working directory
+
+
+library(MonetDBLite)
+library(DBI)			# load the DBI package (implements the R-database coding)
+library(stringr)		# load stringr package (manipulates character strings easily)
+library(downloader)		# downloads and then runs the source() function on scripts from github
 
 
 # create a temporary file on the local disk
@@ -59,7 +63,7 @@ tf <- tempfile()
 
 # write the taxonomy id table to that temporary file
 download( 
-	"https://raw.github.com/ajdamico/usgsd/master/National%20Plan%20and%20Provider%20Enumeration%20System/taxonomy%20id%20table.txt" ,
+	"https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Plan%20and%20Provider%20Enumeration%20System/taxonomy%20id%20table.txt" ,
 	tf
 )
 
@@ -176,28 +180,12 @@ head( w ) ; tail( w )
 # national plan and provider enumeration system table.  run them now.  mine look like this:
 
 
+# name the database files in the "MonetDB" folder of the current working directory
+dbfolder <- paste0( getwd() , "/MonetDB" )
 
-####################################################################
-# lines of code to hold on to for all other nppes monetdb analyses #
-
-# first: specify your batfile.  again, mine looks like this:
-# uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/NPPES/nppes.bat"
-
-# second: run the MonetDB server
-pid <- monetdb.server.start( batfile )
-
-# third: your five lines to make a monet database connection.
-# just like above, mine look like this:
-dbname <- "nppes"
-dbport <- 50006
-
-monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
-
-# end of lines of code to hold on to for all other nppes monetdb analyses #
-###########################################################################
-
+# open the connection to the monetdblite database
+db <- dbConnect( MonetDBLite::MonetDBLite() , dbfolder )
+# from now on, the 'db' object will be used for r to connect with the monetdb server
 
 
 # now R has connected to the MonetDB
@@ -256,11 +244,15 @@ v <-
 		ftcbs , 
 		w , 
 		by.x = 'healthcare_provider_taxonomy_code_1' , 
-		by.y = 'taxonomy.id' 
+		by.y = 'taxonomy.id' ,
+		all.x = TRUE
 	)
 	
-# confirm that every record has exactly one match
-stopifnot( nrow( ftcbs ) == nrow( v ) )
+# count..
+nrow( subset( v , is.na( title ) ) )
+
+# ..and then look at non-matching records (there are a few)
+table( subset( v , is.na( title ) )$healthcare_provider_taxonomy_code_1 )
 
 
 # look at the first six records
@@ -274,28 +266,6 @@ table( v[ v$provider_business_practice_location_address_state_name == 'CA' , 'ti
 # neato.
 
 
-###########################################################################
-# end of lines of code to hold on to for all other nppes monetdb analyses #
-
 # disconnect from the current monet database
-dbDisconnect( db )
+dbDisconnect( db , shutdown = TRUE )
 
-# and close it using the `pid`
-monetdb.server.stop( pid )
-
-# end of lines of code to hold on to for all other nppes monetdb analyses #
-###########################################################################
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

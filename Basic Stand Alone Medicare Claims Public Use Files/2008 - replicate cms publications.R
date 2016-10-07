@@ -6,25 +6,16 @@
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
 # library(downloader)
-# batfile <- "C:/My Directory/BSAPUF/MonetDB/bsapuf.bat"
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/Basic%20Stand%20Alone%20Medicare%20Claims%20Public%20Use%20Files/2008%20-%20replicate%20cms%20publications.R" , prompt = FALSE , echo = TRUE )
+# setwd( "C:/My Directory/BSAPUF/" )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Basic%20Stand%20Alone%20Medicare%20Claims%20Public%20Use%20Files/2008%20-%20replicate%20cms%20publications.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 # this r script will replicate statistics found on nine different
@@ -32,50 +23,31 @@
 # and match the output exactly (except where noted)
 
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-###########################################################################################################################################################################
-# prior to running this analysis script, the basic stand alone public use files for 2008 must be imported into a monet database on the local machine. you must run this:  #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://raw.github.com/ajdamico/usgsd/master/Basic%20Stand%20Alone%20Medicare%20Claims%20Public%20Use%20Files/2008%20-%20import%20all%20csv%20files%20into%20monetdb.R  #
-###########################################################################################################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#######################################################################################################################################################################################
+# prior to running this analysis script, the basic stand alone public use files for 2008 must be imported into a monet database on the local machine. you must run this:              #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://raw.githubusercontent.com/ajdamico/asdfree/master/Basic%20Stand%20Alone%20Medicare%20Claims%20Public%20Use%20Files/2008%20-%20import%20all%20csv%20files%20into%20monetdb.R #
+#######################################################################################################################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# uncomment this line by removing the `#` at the front..
+# setwd( "C:/My Directory/BSAPUF/" )
 
 
-# # # # # # # # # # # # # # #
-# warning: monetdb required #
-# # # # # # # # # # # # # # #
-
-
-library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+library(MonetDBLite)
+library(DBI)			# load the DBI package (implements the R-database coding)
 
 
 # after running the r script above, users should have handy a few lines
 # to initiate and connect to the monet database containing the 2008
 # basic stand alone public use files.  run them now.  mine look like this:
 
+# name the database files in the "MonetDB" folder of the current working directory
+dbfolder <- paste0( getwd() , "/MonetDB" )
 
-
-###################################################################################
-# lines of code to hold on to for the start of all other bsa puf monetdb analyses #
-
-# first: specify your batfile.  again, mine looks like this:
-# uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/BSAPUF/MonetDB/bsapuf.bat"
-
-# second: run the MonetDB server
-pid <- monetdb.server.start( batfile )
-
-# third: your five lines to make a monet database connection.
-# just like above, mine look like this:
-dbname <- "bsapuf"
-dbport <- 50003
-
-monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
-
-# end of lines of code to hold on to for all other bsa puf monetdb analyses #
-#############################################################################
-
+# open the connection to the monetdblite database
+db <- dbConnect( MonetDBLite::MonetDBLite() , dbfolder )
 
 
 # # # # # # # # # # # # # #
@@ -98,32 +70,17 @@ pufs <-
 		substr( year , 3 , 4 ) 
 	)
 
+	
 # loop through each public use file..
 for ( i in pufs ){
 
 	# print the name of the current table
 	print( i )
-	
-	
-	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-	# create a monet.frame object (experimental, but designed to behave like an R data frame) #
-	# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-	assign( i , monet.frame( db , i ) )
 
 	# print the number of records stored in that table
-	print( 
-		paste( 
-			"table" , 
-			i , 
-			"contains" , 
-			nrow( get( i ) ) , 
-			"rows" 
-		) 
-	)
+	print( dbGetQuery( db , paste0( "select count(*) from " , i ) ) )
+	
 }
-
-# and now you can access each of those objects as if they were an R data frame #
 
 
 # # # # # # # # # # # # # #
@@ -150,10 +107,6 @@ benes <-
 # print this matrix to the screen
 benes
 
-# examine the first and last six records of the home health agency (hha) table
-head( hha08 )
-
-tail( hha08 )
 
 # create an 'hhusers' data frame, constructed by querying the monet database
 hhusers <-
@@ -209,11 +162,8 @@ round( hhusers / benes , 4 )
 # the following code will precisely match the 'total' (bottom) row in tables 5 and 6 of the inpatient documentation (pdf page 20)
 # http://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/BSAPUFS/Downloads/2008_BSA_Inpatient_Claims_PUF_GenDoc.pdf
 
-# examine the first six records of the 2008 inpatient claims (inpatient08) table using SQL..
+# examine the first six records of the 2008 inpatient claims (inpatient08) table using SQL
 dbGetQuery( db , "select * from inpatient08 limit 6" )
-
-# ..or access the monet.frame object
-head( inpatient08 )
 
 
 # run a simple sql query on the inpatient claims table in the 2008 monet database
@@ -243,11 +193,9 @@ dbGetQuery(
 # http://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/BSAPUFS/Downloads/2008_BSA_Inpatient_Claims_PUF_GenDoc.pdf
 
 
-# count the total number of claims in the monet data table using SQL..
+# count the total number of claims in the monet data table using SQL
 ( total.claims <- dbGetQuery( db , "select count(*) from inpatient08" ) )
 
-# ..or as a monet.frame
-nrow( inpatient08 )
 
 # print the distinct values of the 'ip_clm_days_cd' column to the screen
 dbGetQuery( db , "select distinct ip_clm_days_cd from inpatient08" )
@@ -291,18 +239,11 @@ table12
 # the following code will precisely match the puf (rightmost) column in table 4 of the hospice documentation (pdf page 7)
 # http://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/BSAPUFS/Downloads/2008_BSA_Hospice_Bene_PUF_GenDoc.pdf
 
-# examine the first six records of the 2008 hospice enrollee (hospice08) table using SQL..
+# examine the first six records of the 2008 hospice enrollee (hospice08) table using SQL
 dbGetQuery( db , "select * from hospice08 limit 6" )
-
-# ..or access it as a monet.frame
-head( hospice08 )
-
 
 # store the number of beneficiaries in hospice (remember this is about 5% of the total population)
 ( total.benes <- dbGetQuery( db , "select count(*) from hospice08" ) )
-
-# same old same old
-nrow( hospice08 )
 
 # store the number of beneficiaries in hospice - in each sex category - into a data frame called 'table4'
 table4 <- 
@@ -362,11 +303,8 @@ snf.users.by.admissions$count / sum( snf.users.by.admissions$count )
 # http://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/BSAPUFS/Downloads/2008_BSA_Carrier_Line_Items_PUF_GenDoc.pdf
 
 
-# examine the first six records of the 2008 carrier line item (carrier08) table using SQL..
+# examine the first six records of the 2008 carrier line item (carrier08) table using SQL
 dbGetQuery( db , "select *  from carrier08 limit 6" )
-
-# ..or as a monet.frame
-head( carrier08 )
 
 # count the total number of line items
 # note: the 'medicare payments' also comes close to the 'medicare payments' column
@@ -383,11 +321,8 @@ dbGetQuery( db , "select count(*) as number_of_line_items , sum( car_hcpcs_pmt_a
 # the following code will precisely match the distribution in table 10 of the prescription drug events documentation (pdf page 9)
 # http://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/BSAPUFS/Downloads/2008_BSA_PD_Events_PUF_GenDoc.pdf
 
-# examine the first six records of the 2008 prescription drug events (pde08) table with SQL..
+# examine the first six records of the 2008 prescription drug events (pde08) table with SQL
 dbGetQuery( db , "select * from pde08 limit 6" )
-
-# ..or with monet.frame
-head( pde08 )
 
 # count the number of events shown in table 1 (on pdf page 2) and get close (but not perfect) to the total drug cost, due to rounding
 table1 <- dbGetQuery( db , "select count(*) as num_events , sum( pde_drug_cost ) as drug_cost_sum from pde08" )
@@ -419,11 +354,8 @@ as.numeric( patient.payment.dist$L1 ) / as.numeric( table1[1] )
 # the following code will precisely match the counts in table 5 of the chronic conditions puf general documentation (pdf page 13)
 # https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/BSAPUFS/Downloads/2008_Chronic_Conditions_PUF_GenDoc.pdf
 
-# examine the first six records of the 2008 chronic conditions (cc08) table using SQL..
+# examine the first six records of the 2008 chronic conditions (cc08) table using SQL
 dbGetQuery( db , "select * from cc08 limit 6" )
-
-# ..or with monet.frame
-head( cc08 )
 
 # create a character vector containing each of the data columns matching the enrollee columns in table 5
 count.columns <-
@@ -448,28 +380,5 @@ dbGetQuery( db , paste( "select bene_sex_ident_cd, " , sum.strings , "from cc08 
 dbGetQuery( db , paste( "select bene_sex_ident_cd, bene_age_cat_cd, " , sum.strings , "from cc08 group by bene_sex_ident_cd, bene_age_cat_cd" ) )
 
 
-#################################################################################
-# lines of code to hold on to for the end of all other bsa puf monetdb analyses #
-
 # disconnect from the current monet database
 dbDisconnect( db )
-
-# and close it using the `pid`
-monetdb.server.stop( pid )
-
-# end of lines of code to hold on to for all other bsa puf monetdb analyses #
-#############################################################################
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

@@ -1,30 +1,20 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # surveillance epidemiology and end results
-# 1973 through 2010
+# 1973 through 2011
 
 # # # # # # # # # # # # # # # # #
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
 # library(downloader)
-# batfile <- "C:/My Directory/SEER/MonetDB/seer.bat
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/Surveillance%20Epidemiology%20and%20End%20Results/replicate%20case%20counts%20table.R" , prompt = FALSE , echo = TRUE )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/Surveillance%20Epidemiology%20and%20End%20Results/replicate%20case%20counts%20table.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 ###################################################
@@ -36,33 +26,29 @@
 #########################################################################################################################################################
 # prior to running this replication script, the seer text files must be loaded into monetdb and stacked into a table called `x` in that database.       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://raw.github.com/ajdamico/usgsd/master/Surveillance%20Epidemiology%20and%20End%20Results/import%20individual-level%20tables%20into%20monetdb.R  #
+# https://raw.githubusercontent.com/ajdamico/asdfree/master/Surveillance%20Epidemiology%20and%20End%20Results/import%20individual-level%20tables%20into%20monetdb.R  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # that script will create a 'MonetDB' directory in C:/My Directory/SEER (or wherever the current working directory had been set) that will be accessed. #
 #########################################################################################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(MonetDBLite)
+library(DBI)			# load the DBI package (implements the R-database coding)
 
 
-###########################################################################################
-# lines of code that you should have held onto from the previous script (mentioned above) #
-
-# first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/SEER/MonetDB/seer.bat"
+# setwd( "C:/My Directory/SEER/" )
+# ..in order to set your current working directory
 
-# second: run the MonetDB server
-pid <- monetdb.server.start( batfile )
 
-# third: your five lines to make a monet database connection.
-# just like above, mine look like this:
-dbname <- "seer"
-dbport <- 50008
+# name the database files in the "MonetDB" folder of the current working directory
+dbfolder <- paste0( getwd() , "/MonetDB" )
 
-monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
+
+# open the connection to the monetdblite database
+db <- dbConnect( MonetDBLite::MonetDBLite() , dbfolder )
+
 
 # # # # # # # # # # # # #
 # analysis start point  #
@@ -77,7 +63,7 @@ dbListFields( db , 'x' )
 
 
 # precisely match the record counts table available on the nci-seer website
-# http://seer.cancer.gov/manuals/TextData.cd1973-2010counts.pdf
+# http://seer.cancer.gov/manuals/TextData.cd1973-2011counts.pdf
 dbGetQuery( db , 'select tablename , count(*) from x group by tablename' )
 
 # note that 
@@ -113,25 +99,5 @@ counts.by.table
 # # # # # # # # # # # #
 
 # disconnect from the current monet database
-dbDisconnect( db )
+dbDisconnect( db , shutdown = TRUE )
 
-# and close it using the `pid`
-monetdb.server.stop( pid )
-
-# end of monetdb analyses #
-###########################
-
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

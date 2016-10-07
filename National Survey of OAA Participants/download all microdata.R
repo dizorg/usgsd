@@ -7,24 +7,15 @@
 # # # # # # # # # # # # # # # # #
 # library(downloader)
 # setwd( "C:/My Directory/NPS/" )
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Survey%20of%20OAA%20Participants/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Survey%20of%20OAA%20Participants/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 # set your working directory.
@@ -37,7 +28,7 @@
 # ..in order to set your current working directory
 
 # remove the # in order to run this install.packages line only once
-# install.packages( c( "httr" , "downloader" ) )
+# install.packages( c( "httr" , "downloader" , "digest" ) )
 
 
 ############################################
@@ -50,10 +41,10 @@
 library(downloader)			# downloads and then runs the source() function on scripts from github
 library(httr)				# load httr package (downloads files from the web, with SSL and cookies)
 
-# load the download.cache and related functions
+# load the download_cached and related functions
 # to prevent re-downloading of files once they've been downloaded.
 source_url( 
-	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	"https://raw.githubusercontent.com/ajdamico/asdfree/master/Download%20Cache/download%20cache.R" , 
 	prompt = FALSE , 
 	echo = FALSE 
 )
@@ -62,7 +53,7 @@ source_url(
 tf <- tempfile() ; td <- tempdir()
 
 # set the agidnet page containing all of the available microdata files
-main.file.page <- "http://www.agidnet.org/DataFiles/NPS/"
+main.file.page <- "http://www.agid.acl.gov/DataFiles/NPS/"
 
 # download the contents of that page to an object
 z <- GET( main.file.page )
@@ -116,7 +107,7 @@ for ( year in all.years ){
 		
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/Caregiver" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/Caregiver" , 
 					year , 
 					"/Caregiver_" , 
 					year , 
@@ -132,7 +123,7 @@ for ( year in all.years ){
 		
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/Collected_Caregiver" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/Collected_Caregiver" , 
 					year , 
 					"/Collected_Caregiver_" , 
 					year , 
@@ -148,7 +139,7 @@ for ( year in all.years ){
 		
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/Family_Caregiver" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/Family_Caregiver" , 
 					year , 
 					"/Family_Caregiver_" , 
 					year , 
@@ -164,7 +155,7 @@ for ( year in all.years ){
 		
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/HomeDeliveredMeals" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/HomeDeliveredMeals" , 
 					year , 
 					"/Home_Meals_" , 
 					year , 
@@ -180,7 +171,7 @@ for ( year in all.years ){
 
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/CongregateMeals" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/CongregateMeals" , 
 					year , 
 					"/Cong_Meals_" , 
 					year , 
@@ -196,7 +187,7 @@ for ( year in all.years ){
 		
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/Homemaker" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/Homemaker" , 
 					year , 
 					"/Homemaker_" , 
 					year , 
@@ -212,7 +203,7 @@ for ( year in all.years ){
 				
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/InfoAssistance" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/InfoAssistance" , 
 					year , 
 					"/InfoAssistance_" , 
 					year , 
@@ -228,7 +219,7 @@ for ( year in all.years ){
 		
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/Transportation" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/Transportation" , 
 					year , 
 					"/Transportation_" , 
 					year , 
@@ -244,7 +235,7 @@ for ( year in all.years ){
 		
 			csv.fn <- 
 				paste0(
-					"http://www.agidnet.org/DataFiles/Documents/NPS/CaseManagement" , 
+					"http://www.agid.acl.gov/DataFiles/Documents/NPS/CaseManagement" , 
 					year , 
 					"/Case_Management_" , 
 					year , 
@@ -257,7 +248,7 @@ for ( year in all.years ){
 		if ( !( serviceid %in% 1:9 ) ) stop( 'unexpected serviceid' )
 		
 		# download the zipped csv's file to a temporary directory
-		download.cache( csv.fn , tf , mode = 'wb' )
+		download_cached( csv.fn , tf , mode = 'wb' )
 		
 		# unzip the temporary file into the temporary directory
 		z <- unzip( tf , exdir = td )
@@ -298,17 +289,3 @@ for ( year in all.years ){
 # print a reminder: set the directory you just saved everything to as read-only!
 message( paste0( "all done.  you should set the file " , file.path( getwd() ) , " read-only so you don't accidentally alter these tables." ) )
 
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

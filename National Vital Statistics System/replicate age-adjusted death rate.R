@@ -6,25 +6,16 @@
 # # block of code to run this # #
 # # # # # # # # # # # # # # # # #
 # library(downloader)
-# batfile <- "C:/My Directory/NVSS/MonetDB/nvss.bat"
-# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Vital%20Statistics%20System/replicate%20age-adjusted%20death%20rate.R" , prompt = FALSE , echo = TRUE )
+# setwd( "C:/My Directory/NVSS/" )
+# source_url( "https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Vital%20Statistics%20System/replicate%20age-adjusted%20death%20rate.R" , prompt = FALSE , echo = TRUE )
 # # # # # # # # # # # # # # #
 # # end of auto-run block # #
 # # # # # # # # # # # # # # #
 
-# if you have never used the r language before,
-# watch this two minute video i made outlining
-# how to run this script from start to finish
-# http://www.screenr.com/Zpd8
+# contact me directly for free help or for paid consulting work
 
 # anthony joseph damico
 # ajdamico@gmail.com
-
-# if you use this script for a project, please send me a note
-# it's always nice to hear about how people are using this stuff
-
-# for further reading on cross-package comparisons, see:
-# http://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
 
 
 # this r script will replicate statistics found on four different
@@ -36,48 +27,33 @@
 #####################################################################################################################
 # prior to running this analysis script, the national vital statistics system files must be imported into           #
 # a monet database on the local machine. you must run this:                                                         #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://raw.github.com/ajdamico/usgsd/master/National%20Vital%20Statistics%20System/download%20all%20microdata.R  #
-#####################################################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-
-# # # # # # # # # # # # # # #
-# warning: monetdb required #
-# # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://raw.githubusercontent.com/ajdamico/asdfree/master/National%20Vital%20Statistics%20System/download%20all%20microdata.R #
+#################################################################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 # remove the # in order to run this install.packages line only once
 # install.packages( "sqldf" )
 
-library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+library(MonetDBLite)
+library(DBI)			# load the DBI package (implements the R-database coding)
 library(sqldf)		# load the sqldf package (enables sql queries on data frames)
+
+
+# setwd( "C:/My Directory/NVSS/" )
+# uncomment the line above (remove the `#`) to set the working directory to C:\My Directory\NVSS
+
 
 # after running the r script above, users should have handy a few lines
 # to initiate and connect to the monet database containing the
 # national vital statistics system files.  run them now.  mine look like this:
 
+# name the database files in the "MonetDB" folder of the current working directory
+dbfolder <- paste0( getwd() , "/MonetDB" )
 
-#####################################################################
-# lines of code to hold on to for all other `nvss` monetdb analyses #
-
-# first: specify your batfile.  again, mine looks like this:
-# uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/NVSS/MonetDB/nvss.bat"
-
-# second: run the MonetDB server
-pid <- monetdb.server.start( batfile )
-
-# third: your five lines to make a monet database connection.
-# just like above, mine look like this:
-dbname <- "nvss"
-dbport <- 50012
-
-monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
-
-# end of lines of code to hold on to for all other nvss monetdb analyses #
-##########################################################################
+# open the connection to the monetdblite database
+db <- dbConnect( MonetDBLite::MonetDBLite() , dbfolder )
 
 
 # # # # # # # # # # # # #
@@ -173,11 +149,11 @@ deaths.from.all.causes / sum( pbac$pop )
 # the last three digits are the actually age (in years/months/days)
 
 # so after excluding all of the `9999` values, "age in years" can be computed with
-# dbSendUpdate( db , "ALTER TABLE mortality_us_2010 ADD COLUMN age_in_years DOUBLE PRECISION" )
+# dbSendQuery( db , "ALTER TABLE mortality_us_2010 ADD COLUMN age_in_years DOUBLE PRECISION" )
 # according to the 2010 codebook, anyone with a first digit between 2 and 8 died before age 1
-# dbSendUpdate( db , "UPDATE mortality_us_2010 SET age_in_years = 0 WHERE age >= 2000 & age < 9000" )
+# dbSendQuery( db , "UPDATE mortality_us_2010 SET age_in_years = 0 WHERE age >= 2000 & age < 9000" )
 # everyone with a "1" starting digit just has the age designated in the 2nd, 3rd, and 4th position.
-# dbSendUpdate( db , "UPDATE mortality_us_2010 SET age_in_years = ( age - 1000 ) WHERE age < 2000" )
+# dbSendQuery( db , "UPDATE mortality_us_2010 SET age_in_years = ( age - 1000 ) WHERE age < 2000" )
 
 # end of diversionary sidenote  #
 # # # # # # # # # # # # # # # # #
@@ -208,28 +184,6 @@ sum( z$rate.within.age * z$wgt )
 # # # # # # # # # # # # # # # # #
 
 
-##############################################################################
-# lines of code to hold on to for the end of all other nvss monetdb analyses #
-
 # disconnect from the current monet database
-dbDisconnect( db )
+dbDisconnect( db , shutdown = TRUE )
 
-# and close it using the `pid`
-monetdb.server.stop( pid )
-
-# end of lines of code to hold on to for all other nvss monetdb analyses #
-##########################################################################
-
-# for more details on how to work with data in r
-# check out my two minute tutorial video site
-# http://www.twotorials.com/
-
-# dear everyone: please contribute your script.
-# have you written syntax that precisely matches an official publication?
-message( "if others might benefit, send your code to ajdamico@gmail.com" )
-# http://asdfree.com needs more user contributions
-
-# let's play the which one of these things doesn't belong game:
-# "only you can prevent forest fires" -smokey bear
-# "take a bite out of crime" -mcgruff the crime pooch
-# "plz gimme your statistical programming" -anthony damico

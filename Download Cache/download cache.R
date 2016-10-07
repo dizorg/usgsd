@@ -1,54 +1,21 @@
-# written by http://hannes.muehleisen.org/
+# # # user note:
+# # # if you think you've got a corrupted download,
+# # # then try setting these two options in your console before re-running
 
-# from http://stackoverflow.com/questions/16474696/read-system-tmp-dir-in-r
-gettmpdir <- 
-	function() {
-		tm <- Sys.getenv(c('TMPDIR', 'TMP', 'TEMP'))
-		d <- which(file.info(tm)$isdir & file.access(tm, 2) == 0)
-		if (length(d) > 0)
-		  tm[[d[1]]]
-		else if (.Platform$OS.type == 'windows')
-		  Sys.getenv('R_USER')
-		else '/tmp'
-	}
+# options( "download_cached.usecache" = FALSE )
+# options( "download_cached.savecache" = TRUE )
 
-
-# almost base64 encoding for plain R, no null padding and no padding markers
-# <hannes@muehleisen.org>, 2014-01-04
-almostbase64encode <- 
-	function( someobj ) {
-      stopifnot(length(someobj) == 1)
-      stopifnot(nchar(someobj) > 0)
-      
-      somestr <- as.character(someobj)
-      while (nchar(somestr) %% 3 != 0) {
-        somestr <- paste0(somestr,"_")
-      }  
-      starts <- seq(1,nchar(somestr),by=3)
-      pieces <- sapply(starts, function(ii) {
-        substr(somestr, ii, ii+2)
-      })  
-      b46c <- "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-      return(paste0(sapply(pieces,function(piece) {
-        n <- bitwShiftL(as.integer(charToRaw(substr(piece,1,1))),16) + 
-          bitwShiftL(as.integer(charToRaw(substr(piece,2,2))),8) +
-          as.integer(charToRaw(substr(piece,3,3)))
-        n1 <- bitwAnd(bitwShiftR(n,18),63)+1
-        n2 <- bitwAnd(bitwShiftR(n,12),63)+1
-        n3 <- bitwAnd(bitwShiftR(n,6),63)+1
-        n4 <- bitwAnd(n,63)+1
-        paste0(substring(b46c,n1,n1),substring(b46c,n2,n2),substring(b46c,n3,n3),substring(b46c,n4,n4))
-      }),collapse=""))  
-    }
+# you must have the `digest` package loaded
+# install.packages( "digest" )
+stopifnot(require(digest))
 
 
 
-
-download.cache <- 
+download_cached <- 
   function (
 	url ,
 	
-	destfile ,
+	destfile = NULL ,
 	
 	# pass in any other arguments needed for the FUN
 	... ,
@@ -60,52 +27,92 @@ download.cache <-
 	# if usedest is TRUE, then 
 	# the program checks whether the destination file is present and contains at least one byte
 	# and if so, doesn't do anything.
-    usedest = getOption( "download.cache.usedest" ) , 
+    usedest = getOption( "download_cached.usedest" ) , 
 	
     # if usecache is TRUE, then
 	# it checks the temporary directory for a file that has already been downloaded,
 	# and if so, copies the cached file to the destination file *instead* of downloading.
-	usecache = getOption( "download.cache.usecache" ) ,
+	usecache = getOption( "download_cached.usecache" ) ,
 	
+    # if savecache is TRUE, then
+	# overwrite the cache file.
+	# (this is useful when a cached file did not download completely)
+	savecache = getOption( "download_cached.savecache" ) ,
+
+    # if hashwarn is TRUE, then warn about missing hash checks
+	hashwarn = getOption( "download_cached.hashwarn" ) ,
+
 	# how many attempts should be made with FUN?
-	attempts = 3
+	attempts = 3 ,
 	# just in case of a server timeout or smthn equally annoying
 	
+	# how long should download_cached wait between attempts?
+	sleepsec = 60
+	
   ) {
+
+  
+	# the huge vector of hashes wuz here
+	hashes <- c( "0" = "0" )
+	
+	
+  
+ 	# from http://stackoverflow.com/questions/16474696/read-system-tmp-dir-in-r
+	gettmpdir <- 
+		function() {
+			tm <- Sys.getenv(c('TMPDIR', 'TMP', 'TEMP'))
+			d <- which(file.info(tm)$isdir & file.access(tm, 2) == 0)
+			if (length(d) > 0)
+			  tm[[d[1]]]
+			else if (.Platform$OS.type == 'windows')
+			  Sys.getenv('R_USER')
+			else '/tmp'
+		}
   
 		# users can set the option to override usedest and usecache globally.
 		# however, if they're not set, they will default to FALSE and TRUE, respectively
 		if( is.null( usedest ) ) usedest <- FALSE
 		if( is.null( usecache ) ) usecache <- TRUE
-		# you could set these *outside* of this function
-		# with lines like
-		# options( "download.cache.usedest" = FALSE )
-		# options( "download.cache.usecache" = TRUE )
-    		
-			
-		cat(
-			paste0(
-				"Downloading from URL '" ,
-				url , 
-				"' to file '" , 
-				destfile , 
-				"'... "
-			)
-		)
+		if( is.null( savecache ) ) savecache <- usecache
+		if( is.null( hashwarn ) ) hashwarn <- FALSE
 		
-		if ( usedest && file.exists( destfile ) && file.info( destfile )$size > 0 ) {
+		if( usecache & !savecache ) warning( "usecache=TRUE and savecache=FALSE does not do anything" )
+		
+		if( is.null( destfile ) ){
+			cat(
+				paste0(
+					"saving from URL '" ,
+					url , 
+					"' to this object... "
+				)
+			)
+		} else {
+			cat(
+				paste0(
+					"Downloading from URL '" ,
+					url , 
+					"' to file '" , 
+					destfile , 
+					"'... "
+				)
+			)
+		}
+		
+		if ( !is.null( destfile ) && usedest && file.exists( destfile ) && file.info( destfile )$size > 0 ) {
 		
 			cat("Destination already exists, doing nothing (override with usedest=FALSE parameter)\n")
 			
 			return( invisible( 0 ) )
 			
 		}
+		if (!usedest && !is.null( destfile ) && file.exists( destfile ) )  file.remove( destfile )
 		
+		urlhash <- digest::digest(url)
 		cachefile <- 
 			paste0(
 				gsub( "\\" , "/" , gettmpdir() , fixed = TRUE ) , 
 				"/" ,
-				almostbase64encode( url ) , 
+				urlhash , 
 				".Rdownloadercache"
 			)
 		
@@ -117,11 +124,16 @@ download.cache <-
 				  paste0(
 					"Destination cached in '" , 
 					cachefile , 
-					"', copying locally (override with usecache=FALSE parameter)\n"
+					"', copying (override with usecache=FALSE parameter)\n"
 				  )
 				)
 				
-				return( invisible( ifelse( file.copy( cachefile , destfile , overwrite = TRUE ) , 0 , 1 ) ) )
+				if( is.null( destfile ) ){
+					load( cachefile )
+					return( invisible( success ) )
+				} else {
+					return( invisible( ifelse( file.copy( cachefile , destfile ) , 0 , 1 ) ) )
+				}
 				
 		  }
 		  
@@ -132,6 +144,9 @@ download.cache <-
 		
 		# keep trying the download until you run out of attempts
 		# and all previous attempts have failed
+		
+		initial.attempts <- attempts
+		
 		while( attempts > 0 & class( failed.attempt ) == 'try-error' ){
 		
 			# only run this loop a few times..
@@ -140,27 +155,79 @@ download.cache <-
 			failed.attempt <-
 				try( {
 					
-					# did the download work?
-					success <- 
-						do.call( 
-							FUN , 
-							list( url , destfile , ... ) 
-						) == 0
-						
+					# if there is no destination file, then `success` contains the data.
+					if( is.null( destfile ) ){
+					
+						# did the download work?
+						success <- 
+							do.call( 
+								FUN , 
+								list( url , ... ) 
+							)
+							
+					} else {
+
+						# did the download work?
+						success <- 
+							do.call( 
+								FUN , 
+								list( url , destfile , ... ) 
+							) == 0
+
+					}
+					
 					} , 
 					silent = TRUE 
 				)
 			
-			# if the download did not work, wait 60 seconds and try again.
+			# if the download did not work, wait `sleepsec` seconds and try again.
 			if( class( failed.attempt ) == 'try-error' ){
-				cat( paste0( "download issue with" , url ) )
-				Sys.sleep( 60 )
+				cat( paste( "download issue with" , url , "\n" ) )
+				Sys.sleep( sleepsec )
 			}
-			
-		}
+
+			# check hashes if exists
+			if (is.na(hashes[urlhash])) {
 				
-		if (success && usecache) file.copy( destfile , cachefile , overwrite = TRUE )
+				# if it doesn't exist and hash warnings are ON, alert the user to a missing hash
+				if( hashwarn ) message("download_cached(): hash missing for ", url, " (", urlhash, ")")
+				
+			} else {
+			
+				# if FUN = getBinaryURL, use the `success` object
+				if( is.null( destfile ) ){
+					filehash <- digest::digest(success, algo = "sha1", file = FALSE)
+				} else {
+					filehash <- digest::digest(destfile, algo = "sha1", file = TRUE)
+				}
+				
+				if (filehash != hashes[urlhash]) {
+					
+					message("download_cached(): hash mismatch for ", url, " (", urlhash, ")")
+					
+					class(failed.attempt) <- 'try-error'
+					
+					rm( success )
+					
+				}
+			}
+		}
 		
-		return( invisible( success ) )
+		# double-check that the `success` object exists.. it might not if `attempts` was set to zero.
+		if ( exists( 'success' ) ){
 		
+			if( is.null( destfile ) && savecache ){
+
+					save( success , file = cachefile )
+
+			} else if ( !is.null( destfile ) && savecache && success ) file.copy( destfile , cachefile , overwrite = TRUE )
+
+			cat("\n")
+			
+			
+			return( invisible( success ) )
+		
+		# otherwise break.
+		} else stop( paste( "download failed after" , initial.attempts , "attempts" ) )
+
 	}
